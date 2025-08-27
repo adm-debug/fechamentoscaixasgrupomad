@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Conferência de Caixa</title>
+  <style>
+    :root{
+      --bg:#0b0d13; --card:#111420; --muted:#6b7280; --text:#e5e7eb;
+      --accent:#4f46e5; --ok:#16a34a; --bad:#dc2626; --line:#1f2433;
+      --shadow: 0 10px 30px rgba(0,0,0,.35); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial,'Noto Sans',sans-serif;background:var(--bg);color:var(--text)}
+    header{position:sticky;top:0;background:#0b0d13;z-index:10}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    .title{display:flex;gap:12px;align-items:center}
+    .title h1{font-size:22px;margin:0;font-weight:700}
+
+    /* Tabs */
+    .tabs{display:flex;flex-wrap:wrap;gap:10px;padding:10px 18px 18px}
+    .tab{appearance:none;border:1px solid var(--line);background:#0e1220;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;transition:.2s;box-shadow:var(--shadow)}
+    .tab[aria-selected="true"], .tab:hover{border-color:var(--accent)}
+
+    /* Section */
+    section.rest{display:none}
+    section.rest.active{display:block}
+
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+    .card h3{margin:0 0 8px 0;font-size:16px}
+    .muted{color:var(--muted)}
+    .spacer{height:8px}
+
+    /* Logo fixa */
+    .logoWrap{display:flex;align-items:center;gap:16px}
+    .logo{width:120px;height:120px;border-radius:18px;border:1px dashed var(--line);background:#0b0f1d;display:grid;place-items:center;overflow:hidden}
+    .logo img{max-width:100%;max-height:100%;object-fit:contain}
+
+    /* Inputs */
+    label{font-size:12px;color:var(--muted)}
+    input[type="text"], input[type="date"]{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:#0e1220;color:var(--text);outline:none}
+    .cols-3{grid-column:span 4}
+    .cols-6{grid-column:span 6}
+    .cols-12{grid-column:span 12}
+    @media (max-width:860px){.cols-3,.cols-6{grid-column:span 12}}
+
+    /* Tabela */
+    table{width:100%;border-collapse:collapse;overflow:hidden;border-radius:14px;border:1px solid var(--line);background:#0e1220}
+    thead th{font-size:12px;color:var(--muted);text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+    tbody td{padding:8px 10px;border-bottom:1px dashed var(--line);vertical-align:top}
+    tbody tr:last-child td{border-bottom:none}
+    .rowTitle{font-weight:600}
+    .mono{font-variant-numeric:tabular-nums}
+
+    .totals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .kpi{background:#0e1220;border:1px solid var(--line);border-radius:14px;padding:10px}
+    .kpi .label{font-size:11px;color:var(--muted)}
+    .kpi .value{font-size:18px;font-weight:700}
+
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{appearance:none;border:1px solid var(--line);background:#141a2b;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
+    .btn.primary{border-color:var(--accent)}
+    .note{font-size:12px;color:var(--muted)}
+    .diffPos{color:var(--ok)} .diffNeg{color:var(--bad)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap title">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2L20 20H4L12 2Z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" stroke="currentColor" stroke-width="1.6"/></svg>
+      <div><h1>Conferência de Caixa</h1></div>
+    </div>
+    <div class="tabs wrap" id="tabBar"></div>
+  </header>
+
+  <main class="wrap" id="sections"></main>
+
+  <template id="sectionTemplate">
+    <section class="rest">
+      <div class="grid">
+        <div class="card cols-12">
+          <div class="logoWrap">
+            <div class="logo"><img alt="Logo do restaurante"></div>
+            <div class="grid" style="gap:10px;grid-template-columns:repeat(12,1fr);width:100%">
+              <div class="cols-6">
+                <label>Nome do restaurante</label>
+                <input type="text" class="name" placeholder="Ex.: MAD BREW" readonly>
+              </div>
+              <div class="cols-6">
+                <label>Data do fechamento</label>
+                <input type="date" class="date">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card cols-12">
+          <h3>Movimentação do dia</h3>
+          <div class="grid">
+            <div class="cols-3"><label>Abertura</label><input type="text" inputmode="decimal" class="in-abertura" placeholder="0,00"></div>
+            <div class="cols-3"><label>Reforço</label><input type="text" inputmode="decimal" class="in-reforco" placeholder="0,00"></div>
+            <div class="cols-3"><label>Vendas (Dinheiro)</label><input type="text" inputmode="decimal" class="in-vendas" placeholder="0,00"></div>
+            <div class="cols-3"><label>Retirada</label><input type="text" inputmode="decimal" class="in-retirada" placeholder="0,00"></div>
+          </div>
+          <div class="spacer"></div>
+          <div class="totals">
+            <div class="kpi"><div class="label">Dinheiro esperado</div><div class="value mono kpi-esp-din">0,00</div></div>
+            <div class="kpi"><div class="label">Total cartões esperado</div><div class="value mono kpi-esp-card">0,00</div></div>
+            <div class="kpi"><div class="label">Dif. Dinheiro</div><div class="value mono kpi-dif-din">0,00</div></div>
+            <div class="kpi"><div class="label">Dif. Cartões</div><div class="value mono kpi-dif-card">0,00</div></div>
+          </div>
+        </div>
+
+        <div class="card cols-12">
+          <h3>Conferência de fechamento</h3>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:26%">Forma Pgto.</th>
+                <th>Esperado</th>
+                <th>Em caixa</th>
+                <th>Dif.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="rowTitle">Dinheiro</td>
+                <td class="mono esp-din">0,00</td>
+                <td><input type="text" inputmode="decimal" class="in-dinheiro" placeholder="0,00"></td>
+                <td class="mono dif-din">0,00</td>
+              </tr>
+
+              <tr>
+                <td class="rowTitle">Crédito</td>
+                <td><input type="text" inputmode="decimal" class="in-cred" placeholder="0,00"></td>
+                <td class="muted">—</td>
+                <td class="muted">—</td>
+              </tr>
+              <tr>
+                <td class="rowTitle">Débito</td>
+                <td><input type="text" inputmode="decimal" class="in-deb" placeholder="0,00"></td>
+                <td class="muted">—</td>
+                <td class="muted">—</td>
+              </tr>
+              <tr>
+                <td class="rowTitle">Pix Máquina</td>
+                <td><input type="text" inputmode="decimal" class="in-pixmaq" placeholder="0,00"></td>
+                <td class="muted">—</td>
+                <td class="muted">—</td>
+              </tr>
+              <tr>
+                <td class="rowTitle">V. Refeição</td>
+                <td><input type="text" inputmode="decimal" class="in-vref" placeholder="0,00"></td>
+                <td class="muted">—</td>
+                <td class="muted">—</td>
+              </tr>
+
+              <tr>
+                <td class="rowTitle">TOTAL Cartões</td>
+                <td class="mono esp-card">0,00</td>
+                <td>
+                  <div class="mono" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+                    <input class="mc" inputmode="decimal" placeholder="Máquina 1" />
+                    <input class="mc" inputmode="decimal" placeholder="Máquina 2" />
+                    <input class="mc" inputmode="decimal" placeholder="Máquina 3" />
+                    <input class="mc" inputmode="decimal" placeholder="Máquina 4" />
+                    <input class="mc" inputmode="decimal" placeholder="Máquina 5" />
+                    <input class="mc" inputmode="decimal" placeholder="Máquina 6" />
+                  </div>
+                  <div class="note">Soma das máquinas: <b class="mono soma-maq">0,00</b></div>
+                </td>
+                <td class="mono dif-card">0,00</td>
+              </tr>
+
+              <tr>
+                <td class="rowTitle">TOTAL Geral</td>
+                <td class="mono esp-geral">0,00</td>
+                <td class="mono em-geral">0,00</td>
+                <td class="mono dif-geral">0,00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="cols-12 actions">
+          <button class="btn primary save">Salvar localmente</button>
+          <button class="btn clear">Limpar este fechamento</button>
+          <button class="btn" onclick="window.print()">Imprimir / PDF</button>
+          <span class="note">Os dados ficam salvos no seu navegador (localmente).</span>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script>
+  // ========= Utilidades numéricas (pt-BR) =========
+  const nf = new Intl.NumberFormat('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmt = n => nf.format((isFinite(n)? n : 0));
+  const parseBR = (v) => {
+    if(v==null) return 0;
+    if(typeof v !== 'string') v=String(v);
+    v = v.trim();
+    if(!v) return 0;
+    v = v.replace(/\./g,'').replace(',', '.');
+    const n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  // ========= Restaurantes (nomes + logos fixas) =========
+  const DEFAULTS = [
+    {id:'mad-brew',    name:'MAD BREW',           logo:'Mad Brew.png'},
+    {id:'mad-garden',  name:'MAD GARDEN',         logo:'Mad Garden.png'},
+    {id:'mad-spritz',  name:'MAD SPRITZ',         logo:'Mad Spritz.png'},
+    {id:'mad-ipanema', name:'MAD BREW • IPANEMA', logo:'Mad Brew Ipanema.png'},
+    {id:'mad-vagao',   name:'MAD VAGÃO',          logo:'Mad Vagão.png'},
+    {id:'mad-sushi',   name:'MAD SUSHI',          logo:'Mad Sushi.png'}
+  ];
+
+  const storeKey = (id)=>`fechamento-v4-${id}`;
+  const restoreState = id => { try{ return JSON.parse(localStorage.getItem(storeKey(id))||'{}'); }catch(_){ return {}; } };
+  const saveState    = (id,data)=> localStorage.setItem(storeKey(id), JSON.stringify(data));
+
+  // ========= Montagem da UI =========
+  const tabBar   = document.getElementById('tabBar');
+  const sections = document.getElementById('sections');
+  const tpl      = document.getElementById('sectionTemplate');
+
+  DEFAULTS.forEach((rest, idx)=>{
+    // Abas
+    const btn = document.createElement('button');
+    btn.className='tab'; btn.role='tab';
+    btn.textContent = rest.name;
+    btn.setAttribute('aria-controls', rest.id);
+    btn.addEventListener('click', ()=>activate(rest.id));
+    tabBar.appendChild(btn);
+
+    // Seção
+    const node = tpl.content.cloneNode(true);
+    const sec  = node.querySelector('section'); sec.id = rest.id;
+
+    // Referências
+    const el = {
+      sec, logo: sec.querySelector('.logo img'),
+      name: sec.querySelector('.name'), date: sec.querySelector('.date'),
+      abertura: sec.querySelector('.in-abertura'),
+      reforco:  sec.querySelector('.in-reforco'),
+      vendas:   sec.querySelector('.in-vendas'),
+      retirada: sec.querySelector('.in-retirada'),
+      espDin: sec.querySelector('.esp-din'),
+      inDin:  sec.querySelector('.in-dinheiro'),
+      difDin: sec.querySelector('.dif-din'),
+      kpiEspDin: sec.querySelector('.kpi-esp-din'),
+      kpiDifDin: sec.querySelector('.kpi-dif-din'),
+      inCred: sec.querySelector('.in-cred'),
+      inDeb:  sec.querySelector('.in-deb'),
+      inPixMaq: sec.querySelector('.in-pixmaq'),
+      inVRef: sec.querySelector('.in-vref'),
+      espCard: sec.querySelector('.esp-card'),
+      somaMaq: sec.querySelector('.soma-maq'),
+      difCard: sec.querySelector('.dif-card'),
+      kpiEspCard: sec.querySelector('.kpi-esp-card'),
+      kpiDifCard: sec.querySelector('.kpi-dif-card'),
+      mc: Array.from(sec.querySelectorAll('.mc')),
+      espGeral: sec.querySelector('.esp-geral'),
+      emGeral:  sec.querySelector('.em-geral'),
+      difGeral: sec.querySelector('.dif-geral'),
+      btnSave: sec.querySelector('.save'),
+      btnClear: sec.querySelector('.clear'),
+    };
+
+    // Estado salvo
+    const st = restoreState(rest.id);
+    el.name.value = st.name || rest.name;
+    if(st.date) el.date.value = st.date;
+    ['abertura','reforco','vendas','retirada','inDin','inCred','inDeb','inPixMaq','inVRef']
+      .forEach(k=>{ if(st[k]!=null) el[k].value = st[k]; });
+    if(st.mc && Array.isArray(st.mc)){ el.mc.forEach((i,ix)=>{ if(st.mc[ix]!=null) i.value = st.mc[ix]; }); }
+
+    // Logo fixa
+    el.logo.src = rest.logo;
+    el.logo.alt = rest.name;
+
+    // Eventos de cálculo/format
+    const inputs = [el.abertura, el.reforco, el.vendas, el.retirada, el.inDin, el.inCred, el.inDeb, el.inPixMaq, el.inVRef, ...el.mc];
+    inputs.forEach(inp=>{
+      inp.addEventListener('input', ()=>recalc(el));
+      inp.addEventListener('blur', ()=>{
+        if(inp.classList.contains('mc') || inp===el.inDin) return;
+        const n = parseBR(inp.value); if(inp.value.trim()!=='') inp.value = nf.format(n);
+      });
+    });
+
+    // Ações
+    el.btnSave.addEventListener('click', ()=>{
+      saveState(rest.id, collect(el));
+      flash(el.btnSave, 'Salvo');
+    });
+    el.btnClear.addEventListener('click', ()=>{
+      if(!confirm('Limpar todos os campos deste fechamento?')) return;
+      sec.querySelectorAll('input[type="text"]').forEach(i=>i.value='');
+      el.mc.forEach(i=>i.value='');
+      recalc(el);
+    });
+
+    sections.appendChild(sec);
+    recalc(el);
+    if(idx===0) btn.setAttribute('aria-selected','true');
+  });
+
+  function activate(id){
+    tabBar.querySelectorAll('.tab').forEach(b=>{
+      const on = b.getAttribute('aria-controls')===id;
+      b.setAttribute('aria-selected', on?'true':'false');
+    });
+    sections.querySelectorAll('section.rest').forEach(s=>s.classList.toggle('active', s.id===id));
+  }
+  activate('mad-brew'); // primeira aba
+
+  // Coleta estado
+  function collect(el){
+    return {
+      name: el.name.value, date: el.date.value,
+      abertura: el.abertura.value, reforco: el.reforco.value,
+      vendas: el.vendas.value, retirada: el.retirada.value,
+      inDin: el.inDin.value, inCred: el.inCred.value,
+      inDeb: el.inDeb.value, inPixMaq: el.inPixMaq.value, inVRef: el.inVRef.value,
+      mc: el.mc.map(i=>i.value)
+    };
+  }
+
+  function flash(btn, text){
+    const old = btn.textContent; btn.textContent = text; btn.disabled=true;
+    setTimeout(()=>{btn.textContent=old; btn.disabled=false;}, 900);
+  }
+
+  // Cálculos
+  function recalc(el){
+    const abertura = parseBR(el.abertura.value);
+    const reforco  = parseBR(el.reforco.value);
+    const vendas   = parseBR(el.vendas.value);
+    const retirada = parseBR(el.retirada.value);
+    const espDinheiro = abertura + reforco + vendas - retirada; // Regra 1
+
+    const emDinheiro = parseBR(el.inDin.value);
+    const difDinheiro = emDinheiro - espDinheiro;               // Regra 3
+
+    el.espDin.textContent = fmt(espDinheiro);
+    el.kpiEspDin.textContent = fmt(espDinheiro);
+    el.difDin.textContent = fmt(difDinheiro);
+    el.kpiDifDin.textContent = fmt(difDinheiro);
+    applyDiffColor(el.difDin, difDinheiro); applyDiffColor(el.kpiDifDin, difDinheiro);
+
+    // Regra 2 – total cartões esperado
+    const espCard = parseBR(el.inCred.value) + parseBR(el.inDeb.value) + parseBR(el.inPixMaq.value) + parseBR(el.inVRef.value);
+    el.espCard.textContent = fmt(espCard);
+    el.kpiEspCard.textContent = fmt(espCard);
+
+    // Regra 4 – diferença cartões (soma relatórios - total cartões esperado)
+    const somaMaq = el.mc.reduce((acc,i)=> acc + parseBR(i.value), 0);
+    el.somaMaq.textContent = fmt(somaMaq);
+    const difCard = somaMaq - espCard;
+    el.difCard.textContent = fmt(difCard);
+    el.kpiDifCard.textContent = fmt(difCard);
+    applyDiffColor(el.difCard, difCard); applyDiffColor(el.kpiDifCard, difCard);
+
+    // Total geral (informativo)
+    const espGeral = espDinheiro + espCard;
+    const emGeral  = emDinheiro + somaMaq;
+    const difGeral = emGeral - espGeral;
+    el.espGeral.textContent = fmt(espGeral);
+    el.emGeral.textContent  = fmt(emGeral);
+    el.difGeral.textContent = fmt(difGeral);
+    applyDiffColor(el.difGeral, difGeral);
+  }
+
+  function applyDiffColor(node, val){
+    node.classList.remove('diffPos','diffNeg');
+    if(val>0) node.classList.add('diffPos');
+    else if(val<0) node.classList.add('diffNeg');
+  }
+  </script>
+</body>
+</html>
